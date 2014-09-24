@@ -42,6 +42,7 @@ jQuery(document).ready(function() {
             $scope.error_text = "";
             $scope.warning_text = "";
             $scope.progress_text = "";
+            
             // Silently exit if it's running or something else than a form submission or "button" triggering
             if ($scope.running || ($event.type === "keypress" && $event.keyCode !== 13)) {
                 return;
@@ -271,49 +272,47 @@ jQuery(document).ready(function() {
     }
 
     function ExportController($scope, $rootScope) {
-        $scope.buildMessage = function(project, is_markdown) {
+        $scope.buildMessage = function(project, files, is_markdown) {
             var message = is_markdown ? "# " : "";
             message += "Hello world!\n\nWe've found updates to the following dependencies used in " +
                        (is_markdown? "**" : "") + project +
                        (is_markdown? "**" : "") + ":\n\n";
 
             var latest_path = '';
-
-            $('.has-update-available').each(function() {
-                var elem = $(this);
-
-                if (elem.attr('data-path') !== latest_path) {
-                    latest_path = elem.attr('data-path');
-
+            files.forEach(function(file) {
+                if (file.path != latest_path) {
+                    latest_path = file.path;
                     message += "File: " + latest_path + "\n\n";
                 }
 
-                message += (is_markdown? "**" : "    ") +
-                           elem.attr('data-artifact') +
-                           (is_markdown? "**" : "") + " " +
-                           elem.attr('data-version') + "--> " +
-                           elem.attr('data-latest-version') + '\n' +
-                           (is_markdown? "`" : "    ") + '"' +
-                           elem.attr('data-group') + ":" +
-                           elem.attr('data-artifact') + ":" +
-                           elem.attr('data-latest-version') + '"' +
-                           (is_markdown? "`" : "") + '\n\n\n';
+                file.dependencies.forEach(function(dependency) {
+                    message += (is_markdown? "**" : "    ") +
+                               dependency.artifact +
+                               (is_markdown? "**" : "") + " " +
+                               dependency.version + "--> " +
+                               dependency.latest_version + '\n' +
+                               (is_markdown? "`" : "    ") + '"' +
+                               dependency.group + ":" +
+                               dependency.artifact + ":" +
+                               dependency.latest_version + '"' +
+                               (is_markdown? "`" : "") + '\n\n\n';
+                });
             });
 
             message += "*This list was generated via " + document.URL + "*";
             return encodeURIComponent(message);
         };
 
-        $scope.exportToEmail = function() {
+        $scope.exportToEmail = function(files) {
             var project = $rootScope.getGithubProject();
             var subject = encodeURIComponent("Project Dependency Status for " + project);
-            window.location.href = "mailto:?subject=" + subject + "&body=" + $scope.buildMessage(project, false);
+            window.location.href = "mailto:?subject=" + subject + "&body=" + $scope.buildMessage(project, files, false);
         };
 
-        $scope.exportToGithub = function() {
+        $scope.exportToGithub = function(files) {
             var project = $rootScope.getGithubProject();
             var title = encodeURIComponent("Project Dependency Status");
-            var body = $scope.buildMessage(project, true);
+            var body = $scope.buildMessage(project, files, true);
             var url = 'https://github.com/' + project + '/issues/new?title=' + title + '&body=' + body;
             window.open(url, '_blank');
         };
