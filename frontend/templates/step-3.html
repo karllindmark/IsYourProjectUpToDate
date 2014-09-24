@@ -22,18 +22,24 @@
             <tbody ng-show="file.dependencies">
                 <tr class="data-row"
                     data-path="{{ file.path }}"
-                    data-group="{{ dep.g }}"
-                    data-artifact="{{ dep.a }}"
-                    data-version="{{ dep.v }}"
+                    data-group="{{ dep.group }}"
+                    data-artifact="{{ dep.artifact }}"
+                    data-version="{{ dep.version }}"
+                    data-latest-version="{{ dep.latest_version }}"
                     ng-repeat="dep in file.dependencies"
                 >
                     <td class="col-40">
-                        <span>{{ dep.a }}</span>
-                        <span class="dependency-meta">{{ dep.g }}</span>
+                        <span>{{ dep.artifact }}</span>
+                        <span class="dependency-meta">{{ dep.group }}</span>
                     </td>
-                    <td class="col-20">{{ dep.v }}</td>
-                    <td class="col-20" style="white-space: pre" id="progress-{{ normalize_dependency(dep) }}">Checking...</td>
-                    <td class="col-20"><a href="#" class="red-button clipboard-button">Copy to clipboard</a></td>
+                    <td class="col-20">{{ dep.version }}</td>
+                    <td class="col-20">
+                        <div>{{ dep.latest_version }}</div>
+                        <span ng-bind-html="dep.latest_version_subtitle | unsafe"></span>
+                    </td>
+                    <td class="col-20">
+                        <a href="#" class="red-button clipboard-button" data-clipboard-text="{{ dep.gav }}">Copy to clipboard</a>
+                    </td>
                 </tr>
             </tbody>
         </table>

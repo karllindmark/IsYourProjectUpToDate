@@ -160,6 +160,7 @@ jQuery(document).ready(function() {
             $scope.error_text = "";
             $scope.warning_text = "";
             $scope.progress_text = "";
+
             // Silently exit if it's running or something else than a form submission or "button" triggering
             if ($scope.running || ($event.type === "keypress" && $event.keyCode !== 13)) {
                 return;
@@ -168,7 +169,6 @@ jQuery(document).ready(function() {
 
             var selected_files = $scope.generateMapListForFiles($scope.files);
             if (selected_files.length === 0) {
-                console.log("How the fuck are we even here? Length => " + selected_files.length);
                 $scope.error_text = "No files selected. You'll need to select at least one of the above.";
                 $scope.running = false;
                 return;
@@ -205,10 +205,6 @@ jQuery(document).ready(function() {
         $scope.warning_text = "";
         $scope.progress_text = "";
 
-        $scope.normalize_dependency = function(dependency) {
-            return (dependency.g + "_" + dependency.a + "_" + dependency.v).replace(/\W/g, '_');
-        };
-
         // TODO: Remove listener on destroy?
         $scope.$on('DependenciesFound', function(event, data) {
             $scope.files = data.files;
@@ -224,35 +220,39 @@ jQuery(document).ready(function() {
             $scope.error_text = "";
             $scope.warning_text = "";
             $scope.progress_text = "";
+
             var postdata = {
-                'group': dependency.g,
-                'artifact': dependency.a,
-                'version': dependency.v,
+                'group': dependency.group,
+                'artifact': dependency.artifact,
+                'version': dependency.version,
                 'project-type': $rootScope.project_type
             };
+
+            dependency.latest_version = "Loading...";
             $http({
                 method: 'POST',
                 url: '/api/check-for-updates/',
                 data: $.param(postdata),
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': $rootScope.csrf_token }
             }).success(function(data) {
-                var id = '#progress-' + $scope.normalize_dependency(dependency);
-                var element = jQuery(id);
-                var row = element.parent();
-                var button = element.siblings().find(".clipboard-button");
-
                 if (data.status === 'UPDATE_FOUND') {
-                    row.addClass("has-update-available");
-                    row.attr("data-new-version", data.new_version);
-                    element.html(data.message + '<span class="dependency-meta">Update available</span>');
+                    dependency.has_update = true;
+                    dependency.gav = data.gav_string;
+                    dependency.latest_version = data.latest_version;
+                    dependency.latest_version_subtitle = '<span class="dependency-meta">Update available</span>';
                 } else if (data.status === 'UP-TO-DATE') {
-                    element.html(data.message + '<span class="dependency-meta">Up to date</span>');
+                    dependency.has_update = false;
+                    dependency.latest_version = data.version;
+                    dependency.latest_version_subtitle = '<span class="dependency-meta">Up to date</span>';
                 } else {
-                    element.html(data.message + '<span class="dependency-meta">:-(</span>');
+                    dependency.has_update = false;
+                    dependency.latest_version = data.version;
+                    dependency.latest_version_subtitle = '<span class="dependency-meta">:-(</span>';
                 }
 
-                button.attr('data-clipboard-text', data.gav_string);
-                $scope.setupClipboard(button);
+                // FIXME: Workaround as it's impossible to know who'll be done last
+                $scope.setupClipboard(jQuery('.clipboard-button'));
+
                 $scope.running = false;
             }).error(function(data) {
                 $scope.error_text = data;
@@ -292,11 +292,11 @@ jQuery(document).ready(function() {
                            elem.attr('data-artifact') +
                            (is_markdown? "**" : "") + " " +
                            elem.attr('data-version') + "--> " +
-                           elem.attr('data-new-version') + '\n' +
+                           elem.attr('data-latest-version') + '\n' +
                            (is_markdown? "`" : "    ") + '"' +
                            elem.attr('data-group') + ":" +
                            elem.attr('data-artifact') + ":" +
-                           elem.attr('data-new-version') + '"' +
+                           elem.attr('data-latest-version') + '"' +
                            (is_markdown? "`" : "") + '\n\n\n';
             });
 

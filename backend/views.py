@@ -84,7 +84,7 @@ def check_for_updates(request):
     if not project_type:
         return JsonHttpResponseBuilder("ERROR", "Missing project type.").build()
 
-    gav_string = group + ':' + artifact + ':' + version
+    gav_string = ":".join([group, artifact, version])
 
     urls = PROJECT_FILES[project_type]['urls']
     for url in urls:
@@ -101,10 +101,10 @@ def check_for_updates(request):
 
         # FIXME (2014-09-10): We should handle attributes accordingly, but at the moment we'll just "ignore" it.
         if version[0] == '$' or version != '+' and LooseVersion(latest_version) > LooseVersion(version):
-            gav_string = group + ':' + artifact + ':' + latest_version
+            gav_string = ":".join([group, artifact, latest_version])
             return JsonHttpResponseBuilder("UPDATE_FOUND",
                                            str(latest_version),
-                                           {"gav_string": gav_string, 'new_version': latest_version}).build()
+                                           {"gav_string": gav_string, 'latest_version': latest_version}).build()
         else:
             return JsonHttpResponseBuilder("UP-TO-DATE", str(latest_version), {"gav_string": gav_string}).build()
     return JsonHttpResponseBuilder("ERROR", "Not available in Maven Central.", {"gav_string": gav_string}).build()

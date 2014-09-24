@@ -18,8 +18,9 @@ class GradleProjectFile(GenericProjectFile):
                 group = results.group(1)
                 artifact = results.group(2)
                 version = results.group(3)
-                dependencies.append({'g': group,
-                                     'a': artifact,
-                                     'v': version})
+                dependencies.append({'group': group,
+                                     'artifact': artifact,
+                                     'version': version,
+                                     'gav': ":".join([group, artifact, version])})
         return dependencies
 
