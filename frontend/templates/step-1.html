@@ -1,0 +1,25 @@
+<section id="step-1" ng-controller="SearchController">
+    <h1>Is your project up to date?</h1>
+    <p>As time flies, the libraries we all love to use get updated. Use this service to see if there are newer any versions for you to use in your Github projects.</p>
+    <form method="post" id="search-box" ng-submit="triggerSearch($event)">
+        {% include "status.html"%}
+        <fieldset id="search-bar-and-button">
+            <!-- TODO: Randomize the placeholder user/repo -->
+            <input tabindex="2" name="github-info" placeholder="Ex: karllindmark/FizzBuzz" type="text" ng-model="github_info">
+            {% csrf_token %}
+            <div class="attached-button-wrap pseudo-button" tabindex="2" ng-click="triggerSearch($event)" ng-keypress="triggerSearch($event)"></div>
+        </fieldset>
+        <div>
+            <a href="#" class="dropdown-trigger" data-target="dropdown-options">Click here for more options</a>
+            <div id="dropdown-options">
+                <label for="project-type">Project type</label>
+                <select id="project-type" name="project-type" ng-init="selected_type = ['gradle']" ng-model="selected_type" ng-change="updateProjectType()">
+                    {% for key, value in project_types.iteritems %}
+                    <option value="{{ key }}"{% if key == 'gradle' %}{{ ' selected' }}{% endif %}>{{ value.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </form>
+</section>

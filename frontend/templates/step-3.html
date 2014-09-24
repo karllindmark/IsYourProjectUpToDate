@@ -1,0 +1,52 @@
+<section id="step-3" ng-controller="DependencyListController">
+    <h1>Dependencies gathered!</h1>
+    <p>Hooray! We've managed to gather the dependencies for your project. Please report any bugs you may encounter (for example, missing items)!</p>
+    {% include "status.html" %}
+    <div id="project-deps-table-wrapper">
+        {% verbatim %}
+        <table class="project-deps subtle-table" ng-repeat="file in files" ng-show="file.dependencies">
+            <thead>
+                <tr>
+                  <th class="col-40">Title</th>
+                  <th class="col-20">Current version</th>
+                  <th class="col-20">Latest version</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <th colspan="4" style="text-align: left">
+                        File: <a href="{{ file.url }}">{{ file.path }}</a>
+                    </th>
+                </tr>
+            </tfoot>
+            <tbody ng-show="file.dependencies">
+                <tr class="data-row"
+                    data-path="{{ file.path }}"
+                    data-group="{{ dep.group }}"
+                    data-artifact="{{ dep.artifact }}"
+                    data-version="{{ dep.version }}"
+                    data-latest-version="{{ dep.latest_version }}"
+                    ng-repeat="dep in file.dependencies"
+                >
+                    <td class="col-40">
+                        <span>{{ dep.artifact }}</span>
+                        <span class="dependency-meta">{{ dep.group }}</span>
+                    </td>
+                    <td class="col-20">{{ dep.version }}</td>
+                    <td class="col-20">
+                        <div>{{ dep.latest_version }}</div>
+                        <span ng-bind-html="dep.latest_version_subtitle | unsafe"></span>
+                    </td>
+                    <td class="col-20">
+                        <a href="#" class="red-button clipboard-button" data-clipboard-text="{{ dep.gav }}">Copy to clipboard</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        {% endverbatim %}
+    </div>
+    <div id="export-controllers" ng-controller="ExportController">
+        <a id="github-export" class="red-button" ng-click="exportToGithub(files)">Export to Github...</a>
+        <a id="email-export" class="red-button" ng-click="exportToEmail(files)">Export to email...</a>
+    </div>
+</section>

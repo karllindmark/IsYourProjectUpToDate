@@ -59,14 +59,17 @@ def find_dependencies(request):
             return JsonHttpResponseBuilder("ERROR",
                                            "Request failed while fetching the project files. " +
                                            "Please try again later.").build()
-        file_results.append({
-            'path': path,
-            'url': url,
-            'dependencies': ProjectFileBuilder.create(project_type, selected_file, response).extract()
-        })
+
+        dependencies = ProjectFileBuilder.create(project_type, selected_file, response).extract()
+        if dependencies:
+            file_results.append({
+                'path': path,
+                'url': url,
+                'dependencies': dependencies
+            })
 
     if file_results:
-        return JsonHttpResponseBuilder("SUCCESS", "Dependencies found.", {"results": file_results}).build()
+        return JsonHttpResponseBuilder("SUCCESS", "Dependencies found.", {"files": file_results}).build()
     else:
         return JsonHttpResponseBuilder("NO_DEPENDENCIES", "No project files found.").build()
 
@@ -81,7 +84,7 @@ def check_for_updates(request):
     if not project_type:
         return JsonHttpResponseBuilder("ERROR", "Missing project type.").build()
 
-    gav_string = group + ':' + artifact + ':' + version
+    gav_string = ":".join([group, artifact, version])
 
     urls = PROJECT_FILES[project_type]['urls']
     for url in urls:
@@ -98,10 +101,10 @@ def check_for_updates(request):
 
         # FIXME (2014-09-10): We should handle attributes accordingly, but at the moment we'll just "ignore" it.
         if version[0] == '$' or version != '+' and LooseVersion(latest_version) > LooseVersion(version):
-            gav_string = group + ':' + artifact + ':' + latest_version
+            gav_string = ":".join([group, artifact, latest_version])
             return JsonHttpResponseBuilder("UPDATE_FOUND",
                                            str(latest_version),
-                                           {"gav_string": gav_string, 'new_version': latest_version}).build()
+                                           {"gav_string": gav_string, 'latest_version': latest_version}).build()
         else:
             return JsonHttpResponseBuilder("UP-TO-DATE", str(latest_version), {"gav_string": gav_string}).build()
     return JsonHttpResponseBuilder("ERROR", "Not available in Maven Central.", {"gav_string": gav_string}).build()

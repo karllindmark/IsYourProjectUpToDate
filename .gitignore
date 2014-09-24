@@ -57,3 +57,5 @@ docs/_build/
 
 # Vim swap file
 *.swp
+# Database stuff
+db.sqlite3

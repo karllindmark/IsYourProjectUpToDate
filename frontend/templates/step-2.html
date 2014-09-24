@@ -1,0 +1,39 @@
+<section id="step-2" ng-controller="FileListController">
+    <h1>Project found!</h1>
+    <p>Not only did we find your project, but we've also managed to find the following files in it. You may select/deselect any files below.</p>
+    <form method="post" id="project-files-box">
+        <table id="project-files-table" class="subtle-table">
+            <thead>
+                <tr>
+                    <th class="col-80">Project file</th>
+                    <th class="col-20">
+                        <label for="file-toggler">
+                            Include
+                            <input type="checkbox" class="file-toggler" ng-init="toggle_status = true" ng-model="toggle_status" ng-click="toggleAllRows($event)">
+                        </label>
+                    </th>
+                </tr>
+            </thead>
+            {% verbatim %}
+            <tbody ng-show="files.length > 0">
+                <tr class="data-row" ng-repeat="file in files">
+                    <td class="col-80">
+                        <a href="{{ file.html_url }}" target="_blank">{{ file.path }}</a>
+                    </td>
+                    <td class="col-20">
+                        <!-- TODO: Fix checkbox toggling -->
+                        <input name="selected" type="checkbox" ng-init="file.selected = true" ng-model="file.selected" value="{{ file.html_url }}|{{ file.path }}" ng-change="checkIfAllRowsAreChecked()">
+                    </td>
+                </tr>
+            </tbody>
+            {% endverbatim %}
+            <tbody ng-show="files.length === 0">
+                <tr class="data-row">
+                    <td class="col-80" colspan="2">No files found.</td>
+                </tr>
+            </tbody>
+        </table>
+        {% include "status.html" %}
+        <input class="red-button" type="submit" value="Next" style="margin-top: 16px" ng-click="fetchDependencies($event)" ng-keypress="fetchDependencies($event)">
+    </form>
+</section>
