@@ -92,6 +92,7 @@ a:hover {
 .status {
     padding: 8px;
     text-align: left;
+    margin-bottom: 16px;
 }
 
 .status.error {
@@ -354,6 +355,11 @@ input[type="text"] {
 /* Step #2 */
 #step-2 {
     display: none;
+}
+
+#step-2 .status {
+    margin-bottom: 0;
+    margin-top: 16px;
 }
 
 .project-deps .dependency-meta {
