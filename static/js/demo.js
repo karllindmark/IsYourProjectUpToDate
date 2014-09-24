@@ -9,24 +9,17 @@ jQuery(document).ready(function() {
     var INVALID_LETTERS_REGEX = /[^\w\/\.-]/g;
 
     var app = angular.module('demo', []);
+
+    app.filter('unsafe', function($sce) {
+        return function(val) {
+            return $sce.trustAsHtml(val);
+        };
+    });
     app.controller('MainController', function($scope, $rootScope){
         $rootScope.project_type = 'gradle';
         $rootScope.csrf_token = jQuery('input[name=csrfmiddlewaretoken]').val();
         $rootScope.getGithubProject = function() {
             return $rootScope.github_username + "/" + $rootScope.github_repo;
-        };
-
-        // TODO: Let's move these to be angular native (ie, elements controlled by ng-show) instead
-        $scope.showError = function(element, text) {
-            element.html(text).removeClass('warning neutral').addClass('error').show();
-        };
-
-        $scope.showWarning = function(element, text) {
-            element.html(text).removeClass('error neutral').addClass('warning').show();
-        };
-
-        $scope.showProgress = function(element, text) {
-            element.html(text).removeClass('error warning').addClass('neutral').show();
         };
     });
 
@@ -38,25 +31,30 @@ jQuery(document).ready(function() {
 
     function SearchController($scope, $rootScope, $http) {
         $scope.running = false;
+        $scope.error_text = "";
+        $scope.warning_text = "";
+        $scope.progress_text = "";
         $scope.updateProjectType = function() {
             $rootScope.project_type = $scope.selected_type;
         };
 
         $scope.triggerSearch = function($event) {
+            $scope.error_text = "";
+            $scope.warning_text = "";
+            $scope.progress_text = "";
             // Silently exit if it's running or something else than a form submission or "button" triggering
             if ($scope.running || ($event.type === "keypress" && $event.keyCode !== 13)) {
                 return;
             }
             $scope.running = true;
 
-            var status_box = jQuery('#step-1-status');
             var github_info = $scope.github_info;
             var project_type = $rootScope.project_type;
             var token = $rootScope.csrf_token;
 
             // Did we even get Github info?
             if (!github_info) {
-                $scope.showWarning(status_box, "You forgot to fill in the field below!");
+                $scope.warning_text = 'You forgot to fill in the field below!';
                 $scope.running = false;
                 return;
             }
@@ -67,8 +65,8 @@ jQuery(document).ready(function() {
             // Search for invalid characters
             var found_invalid_letters = github_info.match(INVALID_LETTERS_REGEX);
             if (found_invalid_letters != null && found_invalid_letters.length > 0) {
-                $scope.showError(status_box, 'Invalid characters: '+ $.unique(found_invalid_letters).join(" ") + ' <br>' +
-                                      'Valid username/repository characters are alphanumerics, dashes and punctuations.');
+                $scope.error_text = 'Invalid characters: ' + $.unique(found_invalid_letters).join(" ") + ' <br>' +
+                    'Valid username/repository characters are alphanumerics, dashes and punctuations.';
                 $scope.running = false;
                 return;
             }
@@ -76,10 +74,10 @@ jQuery(document).ready(function() {
             // Check that we have a username and a repo name separated by a "/"
             var user_repo_match = USER_REPO_REGEX.exec(github_info);
             if (user_repo_match === null) {
-                $scope.showError(status_box, 'Invalid format, expected one of the following:<br><br>' +
-                                             '- &lt;username&gt;/&lt;repository&gt;<br>' +
-                                             '- [[http[s]://]www.github.com/]&lt;username&gt;/&lt;repository&gt;<br><br>' +
-                                             'Valid username/repository characters are alphanumerics, dashes and punctuations.');
+                $scope.error_text = 'Invalid format, expected one of the following:<br><br>' +
+                    '- &lt;username&gt;/&lt;repository&gt;<br>' +
+                    '- [[http[s]://]www.github.com/]&lt;username&gt;/&lt;repository&gt;<br><br>' +
+                    'Valid username/repository characters are alphanumerics, dashes and punctuations.';
                 $scope.running = false;
                 return;
             }
@@ -88,7 +86,7 @@ jQuery(document).ready(function() {
             $rootScope.github_username = user_repo_match[1];
             $rootScope.github_repo = user_repo_match[2];
 
-            $scope.showProgress(status_box, "Searching for " + user_repo_match[0] + " on Github...");
+            $scope.progress_text = "Searching for " + user_repo_match[0] + " on Github...";
 
             var postData = {
                 "github-info": user_repo_match[0],
@@ -109,11 +107,11 @@ jQuery(document).ready(function() {
                         jQuery("#step-2").fadeIn(400);
                     });
                 } else {
-                    $scope.showError(status_box, data.message);
+                    $scope.error_text = data.message;
                     $scope.running = false;
                 }
             }).error(function(data) {
-                $scope.showError(status_box, data);
+                $scope.error_text = data;
                 $scope.running = false;
             });
         }
@@ -122,6 +120,9 @@ jQuery(document).ready(function() {
     function FileListController($scope, $rootScope, $http) {
         $scope.running = false;
         $scope.files = [];
+        $scope.error_text = "";
+        $scope.warning_text = "";
+        $scope.progress_text = "";
 
         // TODO: Remove listener on destroy?
         $scope.$on('ProjectFilesFound', function(event, data) {
@@ -156,24 +157,24 @@ jQuery(document).ready(function() {
         };
 
         $scope.fetchDependencies = function($event) {
+            $scope.error_text = "";
+            $scope.warning_text = "";
+            $scope.progress_text = "";
             // Silently exit if it's running or something else than a form submission or "button" triggering
             if ($scope.running || ($event.type === "keypress" && $event.keyCode !== 13)) {
                 return;
             }
             $scope.running = true;
 
-            // TODO: Remove in the future when we're using elements in the HTML instead (with ng-show)
-            var status_box = jQuery('#step-2-status');
-
             var selected_files = $scope.generateMapListForFiles($scope.files);
             if (selected_files.length === 0) {
                 console.log("How the fuck are we even here? Length => " + selected_files.length);
-                $scope.showError(status_box, "No files selected. You'll need to select at least one of the above.");
+                $scope.error_text = "No files selected. You'll need to select at least one of the above.";
                 $scope.running = false;
                 return;
             }
 
-            $scope.showProgress(status_box, 'Gathering dependencies (this might take a while)...');
+            $scope.progress_text = 'Gathering dependencies (this might take a while)...';
             $http({
                 method: 'POST',
                 url: '/api/find-dependencies/',
@@ -187,11 +188,11 @@ jQuery(document).ready(function() {
                         jQuery("#step-3").fadeIn(400);
                     });
                 } else {
-                    $scope.showError(status_box, data.message);
+                    $scope.error_text = data.message;
                     $scope.running = false;
                 }
             }).error(function(data) {
-                $scope.showError(status_box, data);
+                $scope.error_text = data;
                 $scope.running = false;
             });
             $scope.running = false;
@@ -200,6 +201,9 @@ jQuery(document).ready(function() {
 
     function DependencyListController($scope, $rootScope, $http) {
         $scope.files = [];
+        $scope.error_text = "";
+        $scope.warning_text = "";
+        $scope.progress_text = "";
 
         $scope.normalize_dependency = function(dependency) {
             return (dependency.g + "_" + dependency.a + "_" + dependency.v).replace(/\W/g, '_');
@@ -217,6 +221,9 @@ jQuery(document).ready(function() {
         });
 
         $scope.checkForUpdate = function(dependency) {
+            $scope.error_text = "";
+            $scope.warning_text = "";
+            $scope.progress_text = "";
             var postdata = {
                 'group': dependency.g,
                 'artifact': dependency.a,
@@ -248,7 +255,7 @@ jQuery(document).ready(function() {
                 $scope.setupClipboard(button);
                 $scope.running = false;
             }).error(function(data) {
-                $scope.showError(jQuery("#step-3-status"), data);
+                $scope.error_text = data;
                 $scope.running = false;
             });
 

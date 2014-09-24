@@ -1,0 +1,5 @@
+{% verbatim %}
+<div class="status error" style="margin-bottom: 16px" ng-show="error_text" ng-bind-html="error_text | unsafe"></div>
+<div class="status warning" style="margin-bottom: 16px" ng-show="warning_text && !error_text" ng-bind-html="warning_text | unsafe"></div>
+<div class="status neutral" style="margin-bottom: 16px" ng-show="progress_text && !warning_text && !error_text" ng-bind-html="progress_text | unsafe"></div>
+{% endverbatim %}

@@ -1,7 +1,7 @@
 <section id="step-3" ng-controller="DependencyListController">
     <h1>Dependencies gathered!</h1>
     <p>Hooray! We've managed to gather the dependencies for your project. Please report any bugs you may encounter (for example, missing items)!</p>
-    <div id="step-3-status" class="status"></div>
+    {% include "status.html" %}
     <div id="project-deps-table-wrapper">
         {% verbatim %}
         <table class="project-deps subtle-table" ng-repeat="file in files" ng-show="file.dependencies">

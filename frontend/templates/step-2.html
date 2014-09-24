@@ -33,7 +33,7 @@
                 </tr>
             </tbody>
         </table>
-        <div id="step-2-status" class="status" style="margin-top: 16px"></div>
+        {% include "status.html" %}
         <input class="red-button" type="submit" value="Next" style="margin-top: 16px" ng-click="fetchDependencies($event)" ng-keypress="fetchDependencies($event)">
     </form>
 </section>

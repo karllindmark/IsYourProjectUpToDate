@@ -2,7 +2,7 @@
     <h1>Is your project up to date?</h1>
     <p>As time flies, the libraries we all love to use get updated. Use this service to see if there are newer any versions for you to use in your Github projects.</p>
     <form method="post" id="search-box" ng-submit="triggerSearch($event)">
-        <div id="step-1-status" class="status" style="margin-bottom: 16px"></div>
+        {% include "status.html"%}
         <fieldset id="search-bar-and-button">
             <!-- TODO: Randomize the placeholder user/repo -->
             <input tabindex="2" name="github-info" placeholder="Ex: karllindmark/FizzBuzz" type="text" ng-model="github_info">
