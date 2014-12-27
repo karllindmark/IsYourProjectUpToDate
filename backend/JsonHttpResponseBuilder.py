@@ -17,6 +17,9 @@ class JsonHttpResponseBuilder(object):
         :return: HttpResponse object with JSON content
         """
         response = {"status": self.status, "message": self.message}
+        if type(self.extras) is list:
+            self.extras = {"data": self.extras}
+
         for key, value in self.extras.iteritems():
             response[key] = value
         return HttpResponse(json.dumps(response))

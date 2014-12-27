@@ -8,20 +8,59 @@ from backend.JsonHttpResponseBuilder import JsonHttpResponseBuilder
 from backend.projectfiles import ProjectFileBuilder, PROJECT_FILES
 
 GITHUB_API_HOST = "https://api.github.com"
+GITHUB_BRANCH_LIST_URL = GITHUB_API_HOST + "/repos/{github_info}/branches"
+GITHUB_REPO_LIST_URL = GITHUB_API_HOST + "/users/{github_user}/repos"
 GITHUB_LIST_URL = GITHUB_API_HOST + "/search/code?q={project_file}+in:path+repo:{github_info}"
+
+
+def find_user_repos(request):
+    github_user = request.POST.get('github-user')
+    if not github_user:
+        return JsonHttpResponseBuilder("ERROR", "No user specified.").build()
+
+    url = GITHUB_REPO_LIST_URL.format(github_user=github_user)
+    try:
+        response = requests.get(url).json()
+    except (ProtocolError, ConnectionError, ConnectionError):
+        return JsonHttpResponseBuilder("ERROR", "Unable to connect to Github. Please try again later").build()
+
+    if not type(response) is list:
+        return JsonHttpResponseBuilder("ERROR", "No repos found for %s" % github_user).build()
+    else:
+        return JsonHttpResponseBuilder("SUCCESS", "", response).build()
+
+
+def find_project_branches(request):
+    github_info = request.POST.get('github-info')
+    if not github_info:
+        return JsonHttpResponseBuilder("ERROR", "No github info specified.").build()
+
+    url = GITHUB_BRANCH_LIST_URL.format(github_info=github_info)
+    try:
+        response = requests.get(url).json()
+    except (ProtocolError, ConnectTimeoutError, ConnectionError):
+        return JsonHttpResponseBuilder("ERROR", "Unable to connect to Github. Please try again later.").build()
+
+    if not type(response) is list:
+        return JsonHttpResponseBuilder("ERROR", "No branches found for %s!" % github_info).build()
+    else:
+        return JsonHttpResponseBuilder("SUCCESS", "", response).build()
 
 
 def find_project_files(request):
     github_info = request.POST.get('github-info')
+    project_branch = request.POST.get('project-branch')
     project_type = request.POST.get('project-type')
     project = PROJECT_FILES.get(project_type)
 
-    if not github_info or not project:
+    if not github_info or not project_type or not project_branch:
         return JsonHttpResponseBuilder("ERROR", "Oops, something bad happened.").build()
     elif not project:
         return JsonHttpResponseBuilder("ERROR", "Unsupported project type: " + project_type).build()
 
-    url = GITHUB_LIST_URL.format(project_file=project.get('file'), github_info=github_info)
+    url = GITHUB_LIST_URL.format(project_branch=project_branch,
+                                 project_file=project.get('file'),
+                                 github_info=github_info)
     try:
         response = requests.get(url).json()
     except (ProtocolError, ConnectTimeoutError, ConnectionError):

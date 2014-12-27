@@ -1,0 +1,23 @@
+<section id="step-project-options" ng-controller="ProjectOptionsController">
+    <h1>Great - let's narrow down the search!</h1>
+    <p>We'll need your help selecting from the project options below, in order to give you the most accurate report ever.</p>
+    <form method="post" id="project-options-box" ng-submit="triggerSearchForProjectFiles($event)">
+        {% include "status.html"%}
+        <label for="project-type">Project type</label>
+        <select id="project-type" name="project-type" ng-init="selected_type = 'gradle'" ng-model="selected_type" ng-change="updateProjectType()">
+            {% for key, value in project_types.iteritems %}
+            <option value="{{ key }}"{% if key == 'gradle' %}{{ ' selected' }}{% endif %}>{{ value.name }}</option>
+            {% endfor %}
+        </select>
+        <label for="project-branch">Branch</label>
+        <select id="project-branch"
+                name="project-branch"
+                ng-model="selected_branch"
+                ng-options="branch for branch in branches"
+                ng-change="updateProjectBranch()"
+            >
+        </select>
+        <input class="red-button" type="submit" value="Next" style="margin-top: 16px" ng-click="triggerSearchForProjectFiles($event)" ng-keypress="triggerSearchForProjectFiles($event)">
+        <div class="clearfix"></div>
+    </form>
+</section>

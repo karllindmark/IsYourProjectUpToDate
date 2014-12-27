@@ -1,97 +1,70 @@
-jQuery(document).ready(function() {
-    jQuery('a[data-target]').click(function () {
-        jQuery('#' + jQuery(this).attr('data-target')).slideToggle(400);
-    });
-});
 (function() {
-    var GITHUB_URL_REGEX = /^(?:(?:http(?:s)?:\/\/)?(?:www\.)?)github\.com\//i;
-    var USER_REPO_REGEX = /^([\w-]+)\/([\w.-]+)$/i;
-    var INVALID_LETTERS_REGEX = /[^\w\/\.-]/g;
+    var app = angular.module('demo', ["ngCookies", "searchModule", "apiModule"]);
+    app.run(function($http, $cookies) {
+        var csrf_cookie_name = "csrftoken";
 
-    var app = angular.module('demo', []);
+        $http.defaults.headers.xsrfHeaderName = "X-CSRFToken";
+        $http.defaults.xsrfCookieName = csrf_cookie_name;
+        $http.defaults.headers.common['X-CSRFToken'] = $cookies[csrf_cookie_name];
+        $http.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+    });
 
     app.filter('unsafe', function($sce) {
         return function(val) {
             return $sce.trustAsHtml(val);
         };
     });
+
     app.controller('MainController', function($scope, $rootScope){
+        $rootScope.github_username = '';
+        $rootScope.github_repo = '';
         $rootScope.project_type = 'gradle';
-        $rootScope.csrf_token = jQuery('input[name=csrfmiddlewaretoken]').val();
+        $rootScope.project_branch = 'default';
         $rootScope.getGithubProject = function() {
             return $rootScope.github_username + "/" + $rootScope.github_repo;
         };
     });
 
     // Add them to the app
-    app.controller('SearchController', SearchController);
+    /*app.controller('ProjectOptionsController', ProjectOptionsController);
     app.controller('FileListController', FileListController);
     app.controller('DependencyListController', DependencyListController);
     app.controller('ExportController', ExportController);
 
-    function SearchController($scope, $rootScope, $http) {
+    function ProjectOptionsController($scope, $rootScope, $http) {
         $scope.running = false;
-        $scope.error_text = "";
-        $scope.warning_text = "";
-        $scope.progress_text = "";
+        $scope.selected_branch = 'Default';
+        $scope.branches = ['Default'];
+
         $scope.updateProjectType = function() {
             $rootScope.project_type = $scope.selected_type;
         };
 
-        $scope.triggerSearch = function($event) {
-            $scope.error_text = "";
-            $scope.warning_text = "";
-            $scope.progress_text = "";
-            
-            // Silently exit if it's running or something else than a form submission or "button" triggering
-            if ($scope.running || ($event.type === "keypress" && $event.keyCode !== 13)) {
-                return;
-            }
-            $scope.running = true;
+        $scope.updateProjectBranch = function() {
+            $rootScope.project_branch = $scope.selected_branch;
+        };
 
-            var github_info = $scope.github_info;
-            var project_type = $rootScope.project_type;
+        // TODO: Remove listener on destroy?
+        $scope.$on('ProjectBranchesFound', function(event, data) {
+            var branches = [];
+            data.branches.forEach(function (branch, index) {
+                if (index === 0) {
+                    $scope.selected_branch = branch.name;
+                }
+                branches.push(branch.name);
+            });
+            $scope.branches = branches;
+        });
+
+        $scope.triggerSearchForProjectFiles = function(event) {
             var token = $rootScope.csrf_token;
-
-            // Did we even get Github info?
-            if (!github_info) {
-                $scope.warning_text = 'You forgot to fill in the field below!';
-                $scope.running = false;
-                return;
-            }
-
-            // Strip away the Github url from the search string
-            github_info = github_info.replace(GITHUB_URL_REGEX, "");
-
-            // Search for invalid characters
-            var found_invalid_letters = github_info.match(INVALID_LETTERS_REGEX);
-            if (found_invalid_letters != null && found_invalid_letters.length > 0) {
-                $scope.error_text = 'Invalid characters: ' + $.unique(found_invalid_letters).join(" ") + ' <br>' +
-                    'Valid username/repository characters are alphanumerics, dashes and punctuations.';
-                $scope.running = false;
-                return;
-            }
-
-            // Check that we have a username and a repo name separated by a "/"
-            var user_repo_match = USER_REPO_REGEX.exec(github_info);
-            if (user_repo_match === null) {
-                $scope.error_text = 'Invalid format, expected one of the following:<br><br>' +
-                    '- &lt;username&gt;/&lt;repository&gt;<br>' +
-                    '- [[http[s]://]www.github.com/]&lt;username&gt;/&lt;repository&gt;<br><br>' +
-                    'Valid username/repository characters are alphanumerics, dashes and punctuations.';
-                $scope.running = false;
-                return;
-            }
-
-            // Store the user upstairs
-            $rootScope.github_username = user_repo_match[1];
-            $rootScope.github_repo = user_repo_match[2];
-
-            $scope.progress_text = "Searching for " + user_repo_match[0] + " on Github...";
+            var project_type = $rootScope.project_type;
+            var project_branch = $rootScope.project_branch;
 
             var postData = {
-                "github-info": user_repo_match[0],
+                "github-info": $rootScope.getGithubProject(),
                 "project-type": project_type,
+                "branch": project_branch,
                 "csrfmiddlewaretoken": token
             };
 
@@ -103,11 +76,11 @@ jQuery(document).ready(function() {
             }).success(function(data) {
                 if (data.status === 'SUCCESS') {
                     $scope.$parent.$broadcast('ProjectFilesFound', { files: data.files });
-                    jQuery('#step-1').fadeOut(400, function () {
-                        $scope.running = false;
-                        jQuery("#step-2").fadeIn(400);
-                    });
-                } else {
+                    $('html, body').animate({
+                            scrollTop: $("#step-project-files").offset().top
+                    }, 800);
+                    $scope.running = false;
+               } else {
                     $scope.error_text = data.message;
                     $scope.running = false;
                 }
@@ -116,6 +89,7 @@ jQuery(document).ready(function() {
                 $scope.running = false;
             });
         }
+
     }
 
     function FileListController($scope, $rootScope, $http) {
@@ -130,8 +104,8 @@ jQuery(document).ready(function() {
             $scope.files = data.files;
         });
 
-        $scope.toggleAllRows = function($event) {
-            var value = $event.currentTarget.checked;
+        $scope.toggleAllRows = function(event) {
+            var value = event.currentTarget.checked;
             $scope.files.forEach(function(file) {
                 file.selected = value;
             });
@@ -157,13 +131,13 @@ jQuery(document).ready(function() {
             return list;
         };
 
-        $scope.fetchDependencies = function($event) {
+        $scope.fetchDependencies = function(event) {
             $scope.error_text = "";
             $scope.warning_text = "";
             $scope.progress_text = "";
 
             // Silently exit if it's running or something else than a form submission or "button" triggering
-            if ($scope.running || ($event.type === "keypress" && $event.keyCode !== 13)) {
+            if ($scope.running || (event.type === "keypress" && event.keyCode !== 13)) {
                 return;
             }
             $scope.running = true;
@@ -184,10 +158,10 @@ jQuery(document).ready(function() {
             }).success(function(data) {
                 if (data.status === 'SUCCESS') {
                     $scope.$parent.$broadcast('DependenciesFound', { files: data.files });
-                    jQuery('#step-2').fadeOut(400, function () {
-                        $scope.running = false;
-                        jQuery("#step-3").fadeIn(400);
-                    });
+                    $('html, body').animate({
+                        scrollTop: $("#step-project-deps").offset().top
+                    }, 800);
+                    $scope.running = false;
                 } else {
                     $scope.error_text = data.message;
                     $scope.running = false;
@@ -316,5 +290,5 @@ jQuery(document).ready(function() {
             var url = 'https://github.com/' + project + '/issues/new?title=' + title + '&body=' + body;
             window.open(url, '_blank');
         };
-    }
+    }*/
 })();

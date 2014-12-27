@@ -1,25 +1,19 @@
-<section id="step-1" ng-controller="SearchController">
+<section id="step-search" ng-controller="searchController">
     <h1>Is your project up to date?</h1>
     <p>As time flies, the libraries we all love to use get updated. Use this service to see if there are newer any versions for you to use in your Github projects.</p>
-    <form method="post" id="search-box" ng-submit="triggerSearch($event)">
+    <form method="post" id="search-box" ng-submit="triggerSearchForProject($event)">
         {% include "status.html"%}
         <fieldset id="search-bar-and-button">
             <!-- TODO: Randomize the placeholder user/repo -->
-            <input tabindex="2" name="github-info" placeholder="Ex: karllindmark/FizzBuzz" type="text" ng-model="github_info">
-            {% csrf_token %}
-            <div class="attached-button-wrap pseudo-button" tabindex="2" ng-click="triggerSearch($event)" ng-keypress="triggerSearch($event)"></div>
+            <!-- TODO: Autocomplete user repositories upon hitting "/" -->
+            <input tabindex="2" name="github-info" placeholder="Ex: karllindmark/FizzBuzz" type="text" ng-model="github_info" ng-keydown="onKeyDownEvent($event)" ng-keyup="onKeyUpEvent($event)">
+            <div class="attached-button-wrap pseudo-button" tabindex="2" ng-click="triggerSearchForProject($event)" ng-keypress="triggerSearchForProject($event)"></div>
         </fieldset>
-        <div>
-            <a href="#" class="dropdown-trigger" data-target="dropdown-options">Click here for more options</a>
-            <div id="dropdown-options">
-                <label for="project-type">Project type</label>
-                <select id="project-type" name="project-type" ng-init="selected_type = ['gradle']" ng-model="selected_type" ng-change="updateProjectType()">
-                    {% for key, value in project_types.iteritems %}
-                    <option value="{{ key }}"{% if key == 'gradle' %}{{ ' selected' }}{% endif %}>{{ value.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
+        {% verbatim %}
+        <ul role="listbox" ng-show="filtered_repos.length > 0 && !hide_typeahead" class="typeahead-dropdown">
+            <li role="option" ng-click="selectSuggestion($event, $index, true)" ng-class="{selected: selected_suggestion === $index}" ng-repeat="repo in (filtered_repos = (github_repos | filter:isRepositoryVisibleWithFilter | limitTo:5))">{{ repo.owner.login + '/' + repo.name }}</li>
+        </ul>
+        {% endverbatim %}
         <div class="clearfix"></div>
     </form>
 </section>
