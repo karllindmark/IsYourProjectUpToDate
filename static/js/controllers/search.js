@@ -1,6 +1,18 @@
+// Regular expressions used to validate input
 var GITHUB_URL_REGEX = /^(?:(?:http(?:s)?:\/\/)?(?:www\.)?)github\.com\//i;
 var USER_REPO_REGEX = /^([\w-]+)\/([\w.-]+)$/i;
 var INVALID_LETTERS_REGEX = /[^\w\/\.-]/g;
+
+// Key codes used in this script
+var KEY_BACKSPACE = 8;
+var KEY_TAB = 9;
+var KEY_ENTER = 13;
+var KEY_ESC = 27;
+var KEY_ARROW_UP = 38;
+var KEY_ARROW_DOWN = 40;
+var KEY_DELETE = 46;
+
+var NO_SUGGESTION_SELECTED = -1;
 
 var app = angular.module("searchModule", ["apiModule"]);
 app.controller("searchController", SearchController);
@@ -15,37 +27,36 @@ function SearchController($scope, $rootScope, ApiService) {
     $scope.github_username = "";
     $scope.github_repos = [];
 
-    $scope.selected_suggestion = -1;
+    $scope.selected_suggestion = NO_SUGGESTION_SELECTED;
     $scope.filtered_repos = [];
-
     $scope.hide_typeahead = true;
 
     // Function to toggle meta touches on key down
     $scope.onKeyDownEvent = function(event) {
-        // TAB
-        if (event.which === 9 && !$scope.hide_typeahead) {
+        if (event.which === KEY_TAB && !$scope.hide_typeahead) {
             $scope.selectSuggestion(event, $scope.selected_suggestion, true);
         }
     };
 
     // Function to handle the keyUp event instead of using keypress
-    $scope.onKeyUpEvent = function(event, index) {
+    $scope.onKeyUpEvent = function(event) {
         // Generalize the key event identifier
         event.which = event.which || event.keyCode || event.charCode;
         switch (event.which) {
-            case 27: // ESC
-            case 38: // ARROW UP
-            case 40: // ARROW DOWN
+            case KEY_ESC:
+            case KEY_ARROW_UP:
+            case KEY_ARROW_DOWN:
                 $scope.handleSelectionForSuggestions(event);
                 break;
-            case 9:  // TAB
+            case KEY_TAB:
                 break;
-            case 8:  // BACKSPACE
-            case 46: // DELETE
-                $scope.selected_suggestion = -1;
+            case KEY_BACKSPACE:
+            case KEY_DELETE:
+                $scope.selected_suggestion = NO_SUGGESTION_SELECTED;
                 if (!$scope.github_info) {
                     $scope.hide_typeahead = true;
                 }
+                $scope.suggestRepositories(event);
                 break;
             default:
                 $scope.suggestRepositories(event);
@@ -61,9 +72,9 @@ function SearchController($scope, $rootScope, ApiService) {
         }
 
         // If the user presses ESC, we need to hide the type-ahead
-        if (event.which === 27) {
+        if (event.which === KEY_ESC) {
             $scope.hide_typeahead = true;
-            $scope.selected_suggestion = -1;
+            $scope.selected_suggestion = NO_SUGGESTION_SELECTED;
             return;
         }
 
@@ -73,7 +84,7 @@ function SearchController($scope, $rootScope, ApiService) {
         // Calculate the bounds for the type-ahead dropdown
         var max_index = ($scope.filtered_repos.length - 1) || 0;
         var current_index = $scope.selected_suggestion;
-        var next_index = -1;
+        var next_index = NO_SUGGESTION_SELECTED;
 
         if (event.which === 38) { // Key: ARROW UP
             if (current_index >= 0) {
@@ -85,7 +96,7 @@ function SearchController($scope, $rootScope, ApiService) {
             if (current_index < max_index) {
                 next_index = current_index + 1;
             } else {
-                next_index = -1;
+                next_index = NO_SUGGESTION_SELECTED;
             }
         }
 
@@ -94,7 +105,7 @@ function SearchController($scope, $rootScope, ApiService) {
     };
 
     $scope.selectSuggestion = function(event, index, trigger) {
-        if (index === -1) {
+        if (index === NO_SUGGESTION_SELECTED) {
             $scope.selected_suggestion = index;
             $scope.github_info = $scope.info_filter;
             return;
@@ -112,7 +123,7 @@ function SearchController($scope, $rootScope, ApiService) {
 
     $scope.suggestRepositories = function(event) {
         // Grab the current value for the input field (pre-this event)
-        var github_info = event.currentTarget.value;;
+        var github_info = event.currentTarget.value;
         if (!github_info) {
             return;
         }
@@ -129,21 +140,21 @@ function SearchController($scope, $rootScope, ApiService) {
         var last_slash = github_info.lastIndexOf("/");
 
         // Skipping the ENTER presses
-        if (event.which == 13) {
+        if (event.which == KEY_ENTER) {
             return;
         }
 
         // Abort processing if it's a link
         if (github_info.indexOf(":/") !== -1) {
             $scope.hide_typeahead = true;
-            $scope.selected_suggestion = -1;
+            $scope.selected_suggestion = NO_SUGGESTION_SELECTED;
             return;
         }
 
         // We won't do anything without a slash!
         if (first_slash === -1) {
             $scope.hide_typeahead = true;
-            $scope.selected_suggestion = -1;
+            $scope.selected_suggestion = NO_SUGGESTION_SELECTED;
             return;
         }
 
@@ -151,19 +162,19 @@ function SearchController($scope, $rootScope, ApiService) {
         $scope.warning_text = "";
         if (first_slash !== last_slash) {
             $scope.warning_text = "Invalid format: &lt;username&gt;/&lt;repo&gt;";
-            // TODO: Decide if we should run event.preventDefault(); + display a friendly note that we skipped / above
             return;
         }
 
         // Display the type-ahead if necessary
         $scope.hide_typeahead = false;
-        $scope.selected_suggestion = -1;
+        $scope.selected_suggestion = NO_SUGGESTION_SELECTED;
 
         // Validate that the user has specified a username
         var github_user = github_info.substr(0, first_slash);
         var github_repo = github_info.substr(first_slash+1);
         if (!github_user) {
             $scope.warning_text = "No username specified.";
+            $scope.progress_text = "";
             return;
         }
 
@@ -175,6 +186,7 @@ function SearchController($scope, $rootScope, ApiService) {
             ApiService.findUserRepos(postData).success(function(data) {
                 if (data.status === "ERROR") {
                     $scope.warning_text = data.message;
+                    $scope.progress_text = "";
                     return;
                 }
 
@@ -186,6 +198,7 @@ function SearchController($scope, $rootScope, ApiService) {
                 }
             }).error(function(data) {
                 $scope.error_text = data;
+                $scope.progress_text = "";
                 $scope.running = false;
             });
         }
@@ -211,8 +224,8 @@ function SearchController($scope, $rootScope, ApiService) {
         $scope.warning_text = "";
         $scope.progress_text = "";
 
-        // Silently exit if it's running or something else than a form submission or "button" triggering
-        if ($scope.running || (event.type === "keypress" && event.keyCode !== 13)) {
+        // Silently exit if it's already running or something else than a form submission or "button" triggering
+        if ($scope.running || (event.type === "keypress" && event.keyCode !== KEY_ENTER)) {
             return;
         }
         $scope.running = true;
@@ -258,6 +271,8 @@ function SearchController($scope, $rootScope, ApiService) {
         ApiService.findBranches(postData).success(function(data) {
             if (data.status === 'SUCCESS') {
                 $scope.$parent.$broadcast('ProjectBranchesFound', { branches: data.data });
+
+                // FIXME: Use ngAnimate here instead? Or velocity maybe
                 $('html, body').animate({
                     scrollTop: $("#step-project-options").offset().top
                 }, 800);
