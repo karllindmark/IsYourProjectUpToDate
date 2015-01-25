@@ -1,9 +1,9 @@
-<section id="step-search" ng-controller="searchController">
+<section class="step-search" ng-controller="searchController">
     <h1>Is your project up to date?</h1>
     <p>As time flies, the libraries we all love to use get updated. Use this service to see if there are newer any versions for you to use in your Github projects.</p>
-    <form method="post" id="search-box" ng-submit="triggerSearchForProject($event)">
+    <form method="post" class="search-box" ng-submit="triggerSearchForProject($event)">
         {% include "status.html"%}
-        <fieldset id="search-bar-and-button">
+        <fieldset class="search-bar-and-button">
             <!-- TODO: Randomize the placeholder user/repo -->
             <!-- TODO: Autocomplete user repositories upon hitting "/" -->
             <input tabindex="2" name="github-info" placeholder="Ex: karllindmark/FizzBuzz" type="text" ng-model="github_info" ng-keydown="onKeyDownEvent($event)" ng-keyup="onKeyUpEvent($event)">

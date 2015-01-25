@@ -273,9 +273,6 @@ function SearchController($scope, $rootScope, ApiService) {
                 $scope.$parent.$broadcast('ProjectBranchesFound', { branches: data.data });
 
                 // FIXME: Use ngAnimate here instead? Or velocity maybe
-                $('html, body').animate({
-                    scrollTop: $("#step-project-options").offset().top
-                }, 800);
                 $scope.running = false;
             } else {
                 $scope.error_text = data.message;

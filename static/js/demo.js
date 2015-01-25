@@ -1,12 +1,14 @@
 (function() {
-    var app = angular.module('demo', ["ngCookies", "searchModule", "apiModule"]);
-    app.run(function($http, $cookies) {
+    var app = angular.module('demo', ["ngCookies", "searchModule", "projectOptionsModule"]);
+    app.run(function($http, $cookies, $rootScope) {
         var csrf_cookie_name = "csrftoken";
 
         $http.defaults.headers.xsrfHeaderName = "X-CSRFToken";
         $http.defaults.xsrfCookieName = csrf_cookie_name;
         $http.defaults.headers.common['X-CSRFToken'] = $cookies[csrf_cookie_name];
         $http.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+
+        $rootScope.step = 1;
     });
 
     app.filter('unsafe', function($sce) {
@@ -26,71 +28,10 @@
     });
 
     // Add them to the app
-    /*app.controller('ProjectOptionsController', ProjectOptionsController);
+    /*
     app.controller('FileListController', FileListController);
     app.controller('DependencyListController', DependencyListController);
     app.controller('ExportController', ExportController);
-
-    function ProjectOptionsController($scope, $rootScope, $http) {
-        $scope.running = false;
-        $scope.selected_branch = 'Default';
-        $scope.branches = ['Default'];
-
-        $scope.updateProjectType = function() {
-            $rootScope.project_type = $scope.selected_type;
-        };
-
-        $scope.updateProjectBranch = function() {
-            $rootScope.project_branch = $scope.selected_branch;
-        };
-
-        // TODO: Remove listener on destroy?
-        $scope.$on('ProjectBranchesFound', function(event, data) {
-            var branches = [];
-            data.branches.forEach(function (branch, index) {
-                if (index === 0) {
-                    $scope.selected_branch = branch.name;
-                }
-                branches.push(branch.name);
-            });
-            $scope.branches = branches;
-        });
-
-        $scope.triggerSearchForProjectFiles = function(event) {
-            var token = $rootScope.csrf_token;
-            var project_type = $rootScope.project_type;
-            var project_branch = $rootScope.project_branch;
-
-            var postData = {
-                "github-info": $rootScope.getGithubProject(),
-                "project-type": project_type,
-                "branch": project_branch,
-                "csrfmiddlewaretoken": token
-            };
-
-            $http({
-                method: 'POST',
-                url: '/api/find-project-files/',
-                data: $.param(postData),
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': token }
-            }).success(function(data) {
-                if (data.status === 'SUCCESS') {
-                    $scope.$parent.$broadcast('ProjectFilesFound', { files: data.files });
-                    $('html, body').animate({
-                            scrollTop: $("#step-project-files").offset().top
-                    }, 800);
-                    $scope.running = false;
-               } else {
-                    $scope.error_text = data.message;
-                    $scope.running = false;
-                }
-            }).error(function(data) {
-                $scope.error_text = data;
-                $scope.running = false;
-            });
-        }
-
-    }
 
     function FileListController($scope, $rootScope, $http) {
         $scope.running = false;

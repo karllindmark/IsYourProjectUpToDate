@@ -15,6 +15,9 @@ function ApiService($http) {
         },
         findBranches: function(data) {
             return $http.post('/api/find-project-branches/', dataToString(data));
+        },
+        findProjectFiles: function(data) {
+            return $http.post('/api/find-project-files/', dataToString(data));
         }
     };
 }

@@ -47,7 +47,6 @@ section {
 
     text-align: center;
     vertical-align: middle;
-    padding-top: 100px;
     box-sizing: border-box;
 }
 
@@ -264,17 +263,16 @@ form {
     display: inline-block;
 }
 
-#search-box {
-    margin-top: 2.6em;
+.search-box {
 }
 
-#search-bar-and-button {
+.search-bar-and-button {
     border: 0;
     margin: 0;
     padding: 0;
 }
 
-#search-bar-and-button input[type="text"] {
+.search-bar-and-button input[type="text"] {
     float: left;
 }
 
@@ -288,11 +286,11 @@ input[type="text"] {
     box-shadow: 0 0 0 #FF4444;
 }
 
-#search-bar-and-button input[type="text"]:hover {
+.search-bar-and-button input[type="text"]:hover {
     border: 1px solid #999;
 }
 
-#search-bar-and-button input[type="text"]:focus {
+.search-bar-and-button input[type="text"]:focus {
     borx-shadow: 0 0 4px #FF4444;
     border: 1px solid #FF4444;
     outline: none;
@@ -310,10 +308,7 @@ input[type="text"] {
     box-sizing: border-box;
     border: 1px solid #CCC;
 
-    background: #CCC;
-    background-image: url('../images/ic_action_github.png');
-    background-position: center;
-    background-repeat: no-repeat;
+    background: #CCC url('../images/ic_action_github.png') no-repeat center;
     background-size: 36px;
 }
 
@@ -322,7 +317,7 @@ input[type="text"] {
 
 }
 
-#search-bar-and-button:hover .attached-button-wrap, input:focus ~ .attached-button-wrap, .attached-button-wrap:focus {
+.search-bar-and-button:hover .attached-button-wrap, input:focus ~ .attached-button-wrap, .attached-button-wrap:focus {
     box-shadow: 1px 0 4px #FF4444;
     background-color: #FF4444;
     border: 1px solid #EE0000;
